@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "Sing Sign",
+    "version": "1.0",
+    "description": "Learn American Sign Language while listening to your favorite songs!",
+    "icons": {
+        "32": "Sing Sign.png"
+    },
+    "action": { 
+        "default_popup": "index.html"
+    },
+    "permissions": ["scripting", "activeTab", "storage"],
+    "host_permissions": [
+        "https://*/*",
+        "http://*/*"
+    ]
+}

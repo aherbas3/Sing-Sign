@@ -1,0 +1,38 @@
+body {
+  width: 360px;
+  height: 360px;
+  font-family: "Nunito", serif;
+  background-color: #595959;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2em;
+}
+
+h1 {
+  text-align: center;
+  color: white;
+  font-size: 4rem;
+}
+
+.btn-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+button {
+  font-size: 2.5rem;
+  padding: 0.25em 0.5em;
+  font-family: "Nunito", serif;
+  border: none;
+  outline: none;
+  background-color: #BDBDBD;
+  cursor: pointer;
+}
