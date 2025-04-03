@@ -33,6 +33,21 @@ function App() {
           newBtn.className = "Button-sc-1dqy6lx-0 sing-sign-button";
           newBtn.innerHTML = "Click";
           document.querySelector(".mwpJrmCgLlVkJVtWjlI1").appendChild(newBtn);
+
+          const bottomDiv = document.createElement("div");
+          bottomDiv.className = "sing-sign-group";
+          bottomDiv.style.backgroundColor = "red";
+          bottomDiv.style.height = "200px";
+          document
+            .querySelector(".jEMA2gVoLgPQqAFrPhFw")
+            .appendChild(bottomDiv);
+
+          const sideDiv = document.createElement("div");
+          sideDiv.className = "sing-sign-sidebar";
+          sideDiv.style.backgroundColor = "pink";
+          sideDiv.style.height = "100%";
+          sideDiv.style.width = "100%";
+          document.querySelector(".XOawmCGZcQx4cesyNfVO").appendChild(sideDiv);
         },
       });
     });
@@ -50,7 +65,14 @@ function App() {
         target: { tabId: tab.id },
         func: () => {
           const newBtn = document.querySelector(".sing-sign-button");
+          const bottomDiv = document.querySelector(".sing-sign-group");
+          const sideDiv = document.querySelector(".sing-sign-sidebar");
+
           document.querySelector(".mwpJrmCgLlVkJVtWjlI1").removeChild(newBtn);
+          document
+            .querySelector(".jEMA2gVoLgPQqAFrPhFw")
+            .removeChild(bottomDiv);
+          document.querySelector(".XOawmCGZcQx4cesyNfVO").removeChild(sideDiv);
         },
       });
     });
