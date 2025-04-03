@@ -8,7 +8,7 @@
 4. Go to [chrome://extensions/](chrome://extensions/)
 5. Turn on developer mode
 6. Click Load Unpacked and select the dist folder
-![Load Unpacked](https://github.com/user-attachments/assets/dbd44bc3-25cc-4ccf-9a72-8eb3e2205737)
+![image](https://github.com/user-attachments/assets/652a5021-e0ce-4bb4-a1dc-91726ccc90aa)
 
 
 
