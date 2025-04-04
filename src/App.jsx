@@ -29,25 +29,42 @@ function App() {
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
-          const newBtn = document.createElement("button");
-          newBtn.className = "Button-sc-1dqy6lx-0 sing-sign-button";
-          newBtn.innerHTML = "Click";
-          document.querySelector(".mwpJrmCgLlVkJVtWjlI1").appendChild(newBtn);
+          const style = document.createElement("style");
+          style.textContent = `
+            .sing-sign-sidebar {
+              background-color: pink;
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+              padding: 20px;
+              align-items: center;
+              width: 100%;
+              height: 100%;
+            }
 
-          const bottomDiv = document.createElement("div");
-          bottomDiv.className = "sing-sign-group";
-          bottomDiv.style.backgroundColor = "red";
-          bottomDiv.style.height = "200px";
-          document
-            .querySelector(".jEMA2gVoLgPQqAFrPhFw")
-            .appendChild(bottomDiv);
+            .sing-sign-box {
+              width: 200px;
+              height: 200px;
+              background-color: gray;
+            }
+          `;
+          document.head.appendChild(style);
 
           const sideDiv = document.createElement("div");
-          sideDiv.className = "sing-sign-sidebar";
-          sideDiv.style.backgroundColor = "pink";
-          sideDiv.style.height = "100%";
-          sideDiv.style.width = "100%";
-          document.querySelector(".XOawmCGZcQx4cesyNfVO").appendChild(sideDiv);
+          sideDiv.classList.add("sing-sign-sidebar");
+          document.querySelector(".XOawmCGZcQx4cesyNfVO").prepend(sideDiv);
+
+          for (let i = 0; i < 3; i++) {
+            const signBox = document.createElement("div");
+            signBox.classList.add("sing-sign-box");
+
+            sideDiv.append(signBox);
+          }
+
+          // Hide the sidebar
+          document.querySelector(
+            ".XOawmCGZcQx4cesyNfVO > aside"
+          ).style.display = "none";
         },
       });
     });
@@ -64,15 +81,12 @@ function App() {
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
-          const newBtn = document.querySelector(".sing-sign-button");
-          const bottomDiv = document.querySelector(".sing-sign-group");
           const sideDiv = document.querySelector(".sing-sign-sidebar");
 
-          document.querySelector(".mwpJrmCgLlVkJVtWjlI1").removeChild(newBtn);
-          document
-            .querySelector(".jEMA2gVoLgPQqAFrPhFw")
-            .removeChild(bottomDiv);
           document.querySelector(".XOawmCGZcQx4cesyNfVO").removeChild(sideDiv);
+          document.querySelector(
+            ".XOawmCGZcQx4cesyNfVO > aside"
+          ).style.display = "block";
         },
       });
     });
