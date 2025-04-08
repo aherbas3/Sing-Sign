@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "SingSign Extension",
+  "version": "1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SingSign"
+  },
+  "icons": {
+        "32": "Sing Sign.png"
+    },
+  "permissions": ["scripting", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "bg.js"
+  }
+}
