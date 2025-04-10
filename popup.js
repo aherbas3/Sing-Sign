@@ -75,9 +75,62 @@ function start() {
                 aspect-ratio: 16 / 9;
                 flex-shrink: 0;
                 object-fit: cover;
+                background-color: var(--dark-gray);
             }
         `;
         document.head.appendChild(style);
+    }
+
+    function createBoxes(data) {
+        const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
+        const innerHeader = document.querySelector(".sing-sign-header");
+        
+        innerHeader.remove();
+
+        // Remove all old boxes
+        const existingBoxes = innerDiv.querySelectorAll(".sing-sign-box");
+        existingBoxes.forEach(box => box.remove());
+
+        data.forEach(entry => {
+            const signBox = document.createElement("div");
+            signBox.classList.add("sing-sign-box");
+
+            const signText = document.createElement("h2");
+            signText.textContent = entry.title;
+            signBox.appendChild(signText);
+
+            const signImage = document.createElement("img");
+            signImage.setAttribute("src", entry.img);
+            signBox.appendChild(signImage);
+
+            innerDiv.append(signBox);
+        });
+    }
+
+    function resetSidebar() {
+        console.log("hello")
+        const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
+        const innerHeader = document.createElement("h1");
+        innerHeader.classList.add("sing-sign-header");
+        innerHeader.innerHTML = "Your signs will appear here!";
+        innerDiv.innerHTML = "";
+        innerDiv.appendChild(innerHeader);
+    }
+
+    function getSigns() {
+        try {
+            setTimeout(() => {
+                const data = [
+                    {title: "organism", img: chrome.runtime.getURL("assets/organism-img.png")},
+                    {title: "biology", img: chrome.runtime.getURL("assets/biology-img.png")},
+                    {title: "beauty", img: chrome.runtime.getURL("assets/beauty-img.png")},
+                    {title: "season", img: chrome.runtime.getURL("assets/season-img.png")},
+                ]
+                createBoxes(data); 
+            }, 2000);
+        } catch (err) {
+            console.error("Failed to fetch API data:", err);
+        }
     }
 
     createStyles();
@@ -91,11 +144,13 @@ function start() {
 
     //add header
     const innerHeader = document.createElement("h1");
+    innerHeader.classList.add("sing-sign-header");
     innerHeader.innerHTML = "Your signs will appear here!";
     innerDiv.appendChild(innerHeader);
 
     //add sider bar
     sideDiv.appendChild(innerDiv);
+    asideElement.prepend(sideDiv);
 
     window._singResizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
@@ -110,32 +165,29 @@ function start() {
 
     window._singResizeObserver.observe(asideElement);
 
-    asideElement.prepend(sideDiv);
+    window._singSpotifyPlayHandler = async function () {
+        if (this.ariaLabel === "Play") {
+            getSigns();
+        }
+    };
 
-    const data = [
-        {title: "organism", img: chrome.runtime.getURL("assets/organism-img.png")},
-        {title: "biology", img: chrome.runtime.getURL("assets/biology-img.png")},
-        {title: "beauty", img: chrome.runtime.getURL("assets/beauty-img.png")},
-        {title: "season", img: chrome.runtime.getURL("assets/season-img.png")},
-    ]
+    window._singSpotifyResetHandler = function () {
+        resetSidebar();
+        const playButton = document.querySelector("[data-testid='control-button-playpause']");
+        if (playButton.ariaLabel === "Play") {
+            getSigns();
+        }
+    };
 
-    data.forEach(entry => {
-        const signBox = document.createElement("div");
+    const playButton = document.querySelector("[data-testid='control-button-playpause']");
+    playButton.addEventListener("click", window._singSpotifyPlayHandler)
 
-        const signText = document.createElement("h2");
-        signText.textContent = entry.title;
-        signBox.appendChild(signText);
+    const nextButton = document.querySelector("[data-testid='control-button-skip-forward']");
+    nextButton.addEventListener("click", window._singSpotifyResetHandler)
 
-        const signImage = document.createElement("img");
-        signImage.setAttribute("src", entry.img);
-        signBox.appendChild(signImage);
+    const prevButton = document.querySelector("[data-testid='control-button-skip-back']");
+    prevButton.addEventListener("click", window._singSpotifyResetHandler)
 
-        signBox.classList.add("sing-sign-box");
-        innerDiv.append(signBox);
-    }) 
-
-    document.querySelector(".XOawmCGZcQx4cesyNfVO > aside").style.display =
-        "none";
 }
 
 function stop() {
@@ -143,6 +195,15 @@ function stop() {
         window._singResizeObserver.disconnect();
         window._singResizeObserver = null;
     }
+
+    const playButton = document.querySelector("[data-testid='control-button-playpause']");
+    playButton.removeEventListener("click", window._singSpotifyPlayHandler);
+
+    const nextButton = document.querySelector("[data-testid='control-button-skip-forward']");
+    nextButton.removeEventListener("click", window._singSpotifyResetHandler)
+    
+    const prevButton = document.querySelector("[data-testid='control-button-skip-back']");
+    prevButton.removeEventListener("click", window._singSpotifyResetHandler)
 
     const sideDiv = document.querySelector(".sing-sign-sidebar");
     if (sideDiv) {
