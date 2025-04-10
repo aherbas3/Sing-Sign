@@ -85,7 +85,7 @@ function start() {
         const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
         const innerHeader = document.querySelector(".sing-sign-header");
         
-        innerHeader.remove();
+        if (innerHeader) innerHeader.remove();
 
         // Remove all old boxes
         const existingBoxes = innerDiv.querySelectorAll(".sing-sign-box");
@@ -108,7 +108,6 @@ function start() {
     }
 
     function resetSidebar() {
-        console.log("hello")
         const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
         const innerHeader = document.createElement("h1");
         innerHeader.classList.add("sing-sign-header");
