@@ -69,7 +69,7 @@ function start() {
                 font-size: 32px;
             }
 
-            .sing-sign-box > img {
+            .sing-sign-box > .video {
                 width: 100%;
                 max-width: 240px;
                 aspect-ratio: 16 / 9;

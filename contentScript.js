@@ -1,5 +1,54 @@
 let lastSongId = null;
 
+const API_KEY = ''; // Replace with your actual YouTube Data API key
+
+async function fetchASLVideo(noun) {
+  const searchQuery = `${noun} ASL sign`;
+  const CHANNEL_ID = 'UCACxqsL_FA-gMD2fwil7ZXA';
+  const endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=1&channelId=${CHANNEL_ID}&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(endpoint);
+    const data = await response.json();
+    return data.items?.[0]?.id?.videoId || null;
+  } catch (error) {
+    console.error(`Failed to fetch ASL video for: ${noun}`, error);
+    return null;
+  }
+}
+
+async function fetchCachedASLVideo(noun) {
+  const cacheKey = `asl_${noun.toLowerCase()}`;
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get([cacheKey], async (result) => {
+      if (result[cacheKey]) {
+        resolve(result[cacheKey]); // Use cached videoId
+      } else {
+        const videoId = await fetchASLVideo(noun);
+        if (videoId) {
+          chrome.storage.local.set({ [cacheKey]: videoId });
+        }
+        resolve(videoId);
+      }
+    });
+  });
+}
+
+async function getASLVideoMap(nounSet) {
+  const result = [];
+
+  for (const noun of nounSet) {
+    const videoId = await fetchCachedASLVideo(noun);
+    result.push({ word: noun, videoId });
+
+    // Optional: throttle to reduce burst usage (250ms delay)
+    await new Promise((res) => setTimeout(res, 250));
+  }
+
+  return result;
+}
+
 async function extractLyricsText() {
     const songTitle = document.querySelector('[data-testid="context-item-link"]')?.textContent;
     const artistName = document.querySelector('[data-testid="context-item-info-artist"]')?.textContent;
@@ -23,17 +72,14 @@ function createBoxes(data) {
 
     if (data) {
         if (innerHeader) innerHeader.remove();
-        data.forEach(entry => {
+        data.slice(0, 5).forEach(entry => {
             const signBox = document.createElement("div");
             signBox.classList.add("sing-sign-box");
-    
-            const signText = document.createElement("h2");
-            signText.textContent = entry.title;
-            signBox.appendChild(signText);
-    
-            const signImage = document.createElement("img");
-            signImage.setAttribute("src", entry.img);
-            signBox.appendChild(signImage);
+
+            signBox.innerHTML = `
+            <h2>${entry.title}</h2>
+            <iframe class="video" src="https://www.youtube.com/embed/${entry.videoId}?autoplay=1&mute=1&loop=1" title="YouTube video player" frameborder="0"allowfullscreen></iframe>
+            `
     
             innerDiv.append(signBox);
         });
@@ -48,70 +94,30 @@ function createBoxes(data) {
 
 }
 
-async function fetchVideos(query) {
-  const baseUrl = "https://www.googleapis.com/youtube/v3/search";
-  
-  const apiKey = '';
-  const channelId = "UCACxqsL_FA-gMD2fwil7ZXA";
-  const url = `${baseUrl}?part=snippet&channelId=${channelId}&q=${encodeURIComponent(query)}&key=${apiKey}`;
-  
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
-  }
-  
-  const data = await response.json();
-  const regexExactMatch = new RegExp(`(?:^|\\W)${query}(?:$|\\W)`, 'i');
-  const regexStartsWith = new RegExp(`^${query}(\\s|,|$)`, 'i');
-
-  // Map and filter videos based on exact word match
-  const matchedVideos = data.items
-    .map(item => ({
-      title: item.snippet.title,
-      description: item.snippet.description || '',
-      videoId: item.id.videoId
-    }))
-    .filter(video => regexExactMatch.test(video.title));
-
-  // Sort videos to prioritize those that start with the query followed by space/comma
-  const sortedVideos = matchedVideos
-    .sort((a, b) => regexStartsWith.test(b.title) - regexStartsWith.test(a.title))
-    .slice(0, 1); // Limit to top 3 results
-
-  console.log(sortedVideos)
-  return sortedVideos;
-}
-
 function mapNounToVideo(nouns) {
     const nounSet = [...new Set(nouns)];
-    const videoMap = nounSet.map((noun) => ({
-        word: noun,
-        video: fetchVideos(noun),
-    }));
+    getASLVideoMap(nounSet).then((videoMap) => {
+        console.log(videoMap);
+        const data = nouns.map((noun) => {
+            const match = videoMap.find((entry) => entry.word === noun);
+            return {
+                title: noun,
+                videoId: match ? match.videoId : null
+            };
+        });
 
-    // nounSet.forEach(noun => fetchVideos(noun));
-    console.log(videoMap);
-}
-
-function getSigns(nouns) {
-    const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
-    // const videoMap = mapNounToVideo(nouns);
-    mapNounToVideo(nouns);
-    const data = nouns.map((word) => ({
-        title: word,
-        img: 'https://picsum.photos/id/23/240/135',
-    }));
-
-    console.log(data);
-    if (innerDiv) {
-        createBoxes(data);
-    }
+        const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
+        console.log(data);
+        if (innerDiv) {
+            createBoxes(data);
+        }
+    });
 }
 
 async function handleLyricsChange() {
     extractLyricsText().then(extractedNouns => {
         nouns = extractedNouns;
-        getSigns(nouns);
+        mapNounToVideo(nouns);
     });
 
     // nouns = getCleanNounsFromLyrics(lyrics);
