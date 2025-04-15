@@ -81,31 +81,6 @@ function start() {
         document.head.appendChild(style);
     }
 
-    // function resetSidebar() {
-        // const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
-        // const innerHeader = document.createElement("h1");
-        // innerHeader.classList.add("sing-sign-header");
-        // innerHeader.innerHTML = "Your signs will appear here!";
-        // innerDiv.innerHTML = "";
-        // innerDiv.appendChild(innerHeader);
-    // }
-
-    // function getSigns() {
-    //     try {
-    //         setTimeout(() => {
-    //             const data = [
-    //                 {title: "organism", img: chrome.runtime.getURL("assets/organism-img.png")},
-    //                 {title: "biology", img: chrome.runtime.getURL("assets/biology-img.png")},
-    //                 {title: "beauty", img: chrome.runtime.getURL("assets/beauty-img.png")},
-    //                 {title: "season", img: chrome.runtime.getURL("assets/season-img.png")},
-    //             ]
-    //             createBoxes(data); 
-    //         }, 2000);
-    //     } catch (err) {
-    //         console.error("Failed to fetch API data:", err);
-    //     }
-    // }
-
     createStyles();
 
     // create side bar

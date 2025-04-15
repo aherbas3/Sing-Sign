@@ -9,7 +9,9 @@ async function fetchASLVideo(noun) {
     });
   
   const API_KEY = config.apiKey;
-  const searchQuery = `${noun} ASL sign`;
+  let searchQuery = `${noun}`;
+  if (searchQuery.toLowerCase() === "time") return 'gPHgrgZdlX0';
+  if (searchQuery === "kids" || searchQuery === "kid") searchQuery = "children";
   const CHANNEL_ID = 'UCACxqsL_FA-gMD2fwil7ZXA';
   const endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=1&channelId=${CHANNEL_ID}&key=${API_KEY}`;
 
@@ -48,7 +50,6 @@ async function getASLVideoMap(nounSet) {
     const videoId = await fetchCachedASLVideo(noun);
     result.push({ word: noun, videoId });
 
-    // Optional: throttle to reduce burst usage (250ms delay)
     await new Promise((res) => setTimeout(res, 250));
   }
 
@@ -68,6 +69,57 @@ async function extractLyricsText() {
     return fetchedNouns;
 }
 
+const iframeMap = new Map();
+
+const lazyLoadIframes = () => {
+  const placeholders = document.querySelectorAll('.lazy-iframe');
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      const div = entry.target;
+
+      if (entry.isIntersecting) {
+        // If iframe already created, resume
+        if (iframeMap.has(div)) {
+          const iframe = iframeMap.get(div);
+          iframe.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'playVideo' }),
+            '*'
+          );
+          return;
+        }
+
+        // Create iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = div.dataset.src + "&enablejsapi=1"; // Important for JS API
+        iframe.className = "video";
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allow', 'autoplay; encrypted-media');
+        iframe.setAttribute('allowfullscreen', '');
+
+        // Replace placeholder
+        div.replaceWith(iframe);
+        iframeMap.set(div, iframe);
+        obs.unobserve(div); // optional: remove observer for replaced div
+      } else {
+        // Pause if iframe exists and is out of view
+        const iframe = iframeMap.get(div);
+        if (iframe) {
+          iframe.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'pauseVideo' }),
+            '*'
+          );
+        }
+      }
+    });
+  }, {
+    rootMargin: "100px 0px",
+    threshold: 0.1
+  });
+
+  placeholders.forEach(div => observer.observe(div));
+};
+
 function createBoxes(data) {
     const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
     const innerHeader = document.querySelector(".sing-sign-header");
@@ -78,17 +130,22 @@ function createBoxes(data) {
 
     if (data) {
         if (innerHeader) innerHeader.remove();
-        data.slice(0, 5).forEach(entry => {
+        data.forEach(entry => {
             const signBox = document.createElement("div");
             signBox.classList.add("sing-sign-box");
 
             signBox.innerHTML = `
-            <h2>${entry.title}</h2>
-            <iframe class="video" src="https://www.youtube.com/embed/${entry.videoId}?autoplay=1&mute=1&loop=1&playlist=${entry.videoId}" title="YouTube video player" frameborder="0"allowfullscreen></iframe>
-            `
+                <h2>${entry.title}</h2>
+                <div 
+                    class="video lazy-iframe" 
+                    data-src="https://www.youtube.com/embed/${entry.videoId}?autoplay=1&mute=1&loop=1&playlist=${entry.videoId}"
+                ></div>
+                `;
     
             innerDiv.append(signBox);
         });
+        iframeMap.clear();
+        lazyLoadIframes();
     } else if (!innerHeader) {
         const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
         const innerHeader = document.createElement("h1");
@@ -123,20 +180,43 @@ function mapNounToVideo(nouns) {
 async function handleLyricsChange() {
     extractLyricsText().then(extractedNouns => {
         nouns = extractedNouns;
-        mapNounToVideo(nouns);
+        if (nouns.length > 0) {
+            const innerHeader = document.querySelector(".sing-sign-header");
+            if (innerHeader) {
+                innerHeader.textContent = "Loading...";
+                mapNounToVideo(nouns);
+            }
+        } else {
+            const innerHeader = document.querySelector(".sing-sign-header");
+            innerHeader.textContent = "No Lyrics were found for this song :(";
+        }
     });
 
     // nouns = getCleanNounsFromLyrics(lyrics);
+}
+
+function resetSidebar() {
+    const innerDiv = document.querySelector(".sing-sign-sidebar-inside");
+    if (innerDiv) {
+        const innerHeader = document.createElement("h1");
+        innerHeader.classList.add("sing-sign-header");
+        innerHeader.innerHTML = "Your signs will appear here!";
+        innerDiv.innerHTML = "";
+        innerDiv.appendChild(innerHeader);
+    }
 }
 
 setTimeout(
     async () => {
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
         if (nowPlayingWidget) {
-            handleLyricsChange();
             const observer = new MutationObserver(() => {
-                handleLyricsChange();
-                console.log("change")
+                chrome.storage.local.get(["running"]).then((result) => {
+                    if (result.running) {
+                        handleLyricsChange();
+                        resetSidebar();
+                    }
+                });
             });
 
             observer.observe(nowPlayingWidget, {
@@ -146,3 +226,12 @@ setTimeout(
         }
     }, 3000
 )
+
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (changes.running && namespace === "local") {
+    if (changes.running.newValue) {
+        handleLyricsChange();
+        resetSidebar();
+    }
+  }
+});
