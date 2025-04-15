@@ -9,7 +9,7 @@
   },
   "web_accessible_resources": [
   {
-    "resources": ["assets/*.png"],
+    "resources": ["assets/*.png", "config.json"],
     "matches": ["<all_urls>"]
   }
     ],

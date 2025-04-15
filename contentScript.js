@@ -1,8 +1,14 @@
 let lastSongId = null;
 
-const API_KEY = ''; // Replace with your actual YouTube Data API key
-
 async function fetchASLVideo(noun) {
+    const config = await fetch(chrome.runtime.getURL('config.json'))
+    .then(response => response.json())
+    .catch(error => {
+      console.error('Error loading API key:', error);
+      throw error;
+    });
+  
+  const API_KEY = config.apiKey;
   const searchQuery = `${noun} ASL sign`;
   const CHANNEL_ID = 'UCACxqsL_FA-gMD2fwil7ZXA';
   const endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=1&channelId=${CHANNEL_ID}&key=${API_KEY}`;
@@ -78,7 +84,7 @@ function createBoxes(data) {
 
             signBox.innerHTML = `
             <h2>${entry.title}</h2>
-            <iframe class="video" src="https://www.youtube.com/embed/${entry.videoId}?autoplay=1&mute=1&loop=1" title="YouTube video player" frameborder="0"allowfullscreen></iframe>
+            <iframe class="video" src="https://www.youtube.com/embed/${entry.videoId}?autoplay=1&mute=1&loop=1&playlist=${entry.videoId}" title="YouTube video player" frameborder="0"allowfullscreen></iframe>
             `
     
             innerDiv.append(signBox);
@@ -124,9 +130,8 @@ async function handleLyricsChange() {
 }
 
 setTimeout(
-    () => {
+    async () => {
         const nowPlayingWidget = document.querySelector('[data-testid="now-playing-widget"]');
-        console.log(nowPlayingWidget)
         if (nowPlayingWidget) {
             handleLyricsChange();
             const observer = new MutationObserver(() => {
